@@ -8,6 +8,7 @@ import {
   ChatInput,
   ThemeSelector,
   ReasoningDisplay,
+  TypingIndicator,
   Theme,
 } from "./components/chat";
 import {
@@ -84,10 +85,16 @@ export default function Home() {
             {theme === "matrix" && <MatrixRain enabled={effectsEnabled} />}
             {theme === "christmas" && <SnowEffect enabled={effectsEnabled} />}
             {theme === "space" && <SpaceEffect enabled={effectsEnabled} />}
-            {theme === "nightsky" && <NightSkyEffect enabled={effectsEnabled} />}
-            {theme === "synthwave" && <SynthwaveEffect enabled={effectsEnabled} />}
+            {theme === "nightsky" && (
+              <NightSkyEffect enabled={effectsEnabled} />
+            )}
+            {theme === "synthwave" && (
+              <SynthwaveEffect enabled={effectsEnabled} />
+            )}
             {theme === "ocean" && <OceanEffect enabled={effectsEnabled} />}
-            {theme === "cyberpunk" && <CyberpunkEffect enabled={effectsEnabled} />}
+            {theme === "cyberpunk" && (
+              <CyberpunkEffect enabled={effectsEnabled} />
+            )}
             {theme === "sakura" && <SakuraEffect enabled={effectsEnabled} />}
           </div>
         </div>
@@ -99,9 +106,12 @@ export default function Home() {
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
               ))}
-              {isLoading && reasoning.length > 0 && (
-                <ReasoningDisplay steps={reasoning} />
-              )}
+              {isLoading &&
+                (reasoning.length > 0 ? (
+                  <ReasoningDisplay steps={reasoning} />
+                ) : (
+                  <TypingIndicator />
+                ))}
               <div ref={messagesEndRef} />
             </div>
           )}

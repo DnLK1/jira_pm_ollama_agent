@@ -225,7 +225,6 @@ export function useChat() {
                   setMessages((prevMessages) =>
                     prevMessages.map((msg) => (msg.id === assistantId ? finalMessage : msg))
                   );
-                  setReasoning([]);
                   break;
                 }
               }
@@ -240,9 +239,9 @@ export function useChat() {
             msg.id === assistantId ? { ...msg, content: `Error: ${errorMessage}` } : msg
           )
         );
-        setReasoning([]);
       } finally {
         setIsLoading(false);
+        setReasoning([]);
       }
     },
     [isLoading]
