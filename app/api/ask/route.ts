@@ -377,6 +377,7 @@ async function* orchestrate(
       const condensedResult = condenseForAI(toolName, toolResult, toolArgs);
       messages.push({
         role: "tool",
+        tool_call_id: toolCall.id,
         content:
           typeof condensedResult === "string"
             ? condensedResult
@@ -400,6 +401,7 @@ async function* orchestrate(
 
       messages.push({
         role: "tool",
+        tool_call_id: toolCall.id,
         content: JSON.stringify({ error: errorMessage }),
       });
     }
