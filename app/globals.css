@@ -1,0 +1,488 @@
+@import "tailwindcss";
+
+/* Default: Grey */
+:root {
+  --bg-hard: #18181b;
+  --bg: #1f1f23;
+  --bg-soft: #27272a;
+  --bg-highlight: #3f3f46;
+  --fg: #e4e4e7;
+  --fg-dim: #a1a1aa;
+  --fg-muted: #71717a;
+  --accent: #a1a1aa;
+  --green: #86efac;
+  --yellow: #fde047;
+  --blue: #93c5fd;
+  --red: #fca5a5;
+  --orange: #fdba74;
+}
+
+/* Gruvbox theme */
+[data-theme="gruvbox"] {
+  --bg-hard: #1d2021;
+  --bg: #282828;
+  --bg-soft: #32302f;
+  --bg-highlight: #3c3836;
+  --fg: #ebdbb2;
+  --fg-dim: #a89984;
+  --fg-muted: #665c54;
+  --accent: #fabd2f;
+  --green: #b8bb26;
+  --yellow: #fabd2f;
+  --blue: #83a598;
+  --red: #fb4934;
+  --orange: #fe8019;
+}
+
+/* Nord theme */
+[data-theme="nord"] {
+  --bg-hard: #242933;
+  --bg: #2e3440;
+  --bg-soft: #3b4252;
+  --bg-highlight: #434c5e;
+  --fg: #eceff4;
+  --fg-dim: #d8dee9;
+  --fg-muted: #4c566a;
+  --accent: #88c0d0;
+  --green: #a3be8c;
+  --yellow: #ebcb8b;
+  --blue: #81a1c1;
+  --red: #bf616a;
+  --orange: #d08770;
+}
+
+/* Tokyo Night theme */
+[data-theme="tokyo"] {
+  --bg-hard: #16161e;
+  --bg: #1a1b26;
+  --bg-soft: #24283b;
+  --bg-highlight: #414868;
+  --fg: #c0caf5;
+  --fg-dim: #a9b1d6;
+  --fg-muted: #565f89;
+  --accent: #bb9af7;
+  --green: #9ece6a;
+  --yellow: #e0af68;
+  --blue: #7aa2f7;
+  --red: #f7768e;
+  --orange: #ff9e64;
+}
+
+/* Catppuccin theme */
+[data-theme="catppuccin"] {
+  --bg-hard: #11111b;
+  --bg: #1e1e2e;
+  --bg-soft: #313244;
+  --bg-highlight: #45475a;
+  --fg: #cdd6f4;
+  --fg-dim: #bac2de;
+  --fg-muted: #6c7086;
+  --accent: #f5c2e7;
+  --green: #a6e3a1;
+  --yellow: #f9e2af;
+  --blue: #89b4fa;
+  --red: #f38ba8;
+  --orange: #fab387;
+}
+
+/* Solarized Light theme */
+[data-theme="solarized"] {
+  --bg-hard: #eee8d5;
+  --bg: #fdf6e3;
+  --bg-soft: #eee8d5;
+  --bg-highlight: #e0dbcb;
+  --fg: #657b83;
+  --fg-dim: #839496;
+  --fg-muted: #93a1a1;
+  --accent: #268bd2;
+  --green: #859900;
+  --yellow: #b58900;
+  --blue: #268bd2;
+  --red: #dc322f;
+  --orange: #cb4b16;
+}
+
+/* GitHub Light theme */
+[data-theme="github"] {
+  --bg-hard: #f6f8fa;
+  --bg: #ffffff;
+  --bg-soft: #f6f8fa;
+  --bg-highlight: #e1e4e8;
+  --fg: #24292e;
+  --fg-dim: #586069;
+  --fg-muted: #959da5;
+  --accent: #0366d6;
+  --green: #22863a;
+  --yellow: #b08800;
+  --blue: #0366d6;
+  --red: #d73a49;
+  --orange: #e36209;
+}
+
+/* Matrix theme */
+[data-theme="matrix"] {
+  --bg-hard: #000000;
+  --bg: #0a0a0a;
+  --bg-soft: #0f1a0f;
+  --bg-highlight: #1a2e1a;
+  --fg: #00ff41;
+  --fg-dim: #00cc33;
+  --fg-muted: #006622;
+  --accent: #00ff41;
+  --green: #00ff41;
+  --yellow: #33ff77;
+  --blue: #00dd55;
+  --red: #ff3333;
+  --orange: #88ff44;
+}
+
+/* Christmas theme */
+[data-theme="christmas"] {
+  --bg-hard: #1a0a0a;
+  --bg: #2d1212;
+  --bg-soft: #3d1a1a;
+  --bg-highlight: #4a2020;
+  --fg: #f5f0e6;
+  --fg-dim: #d4c9b9;
+  --fg-muted: #8b7355;
+  --accent: #c41e3a;
+  --green: #2e8b57;
+  --yellow: #ffd700;
+  --blue: #87ceeb;
+  --red: #c41e3a;
+  --orange: #ff6b35;
+}
+
+/* Space theme */
+[data-theme="space"] {
+  --bg-hard: #030712;
+  --bg: #0f172a;
+  --bg-soft: #1e293b;
+  --bg-highlight: #334155;
+  --fg: #e2e8f0;
+  --fg-dim: #94a3b8;
+  --fg-muted: #475569;
+  --accent: #818cf8;
+  --green: #4ade80;
+  --yellow: #fbbf24;
+  --blue: #38bdf8;
+  --red: #f87171;
+  --orange: #fb923c;
+}
+
+/* Night Sky theme */
+[data-theme="nightsky"] {
+  --bg-hard: #0a0a1a;
+  --bg: #0d1025;
+  --bg-soft: #151830;
+  --bg-highlight: #1e2240;
+  --fg: #d4d8f0;
+  --fg-dim: #9ca3c4;
+  --fg-muted: #4a5280;
+  --accent: #a5b4fc;
+  --green: #86efac;
+  --yellow: #fde68a;
+  --blue: #93c5fd;
+  --red: #fca5a5;
+  --orange: #fdba74;
+}
+
+/* Synthwave theme */
+[data-theme="synthwave"] {
+  --bg-hard: #0a0010;
+  --bg: #1a0a2e;
+  --bg-soft: #2d1b4e;
+  --bg-highlight: #3d2a5e;
+  --fg: #f0e6ff;
+  --fg-dim: #c4b5d9;
+  --fg-muted: #6b5a80;
+  --accent: #ff00c8;
+  --green: #00ffaa;
+  --yellow: #ffdd00;
+  --blue: #00ffff;
+  --red: #ff0066;
+  --orange: #ff6600;
+}
+
+/* Ocean theme */
+[data-theme="ocean"] {
+  --bg-hard: #020b18;
+  --bg: #041526;
+  --bg-soft: #082035;
+  --bg-highlight: #0d3050;
+  --fg: #c5e4f3;
+  --fg-dim: #7eb8d8;
+  --fg-muted: #3d7a9e;
+  --accent: #00d4aa;
+  --green: #00d4aa;
+  --yellow: #f0c674;
+  --blue: #4fc3f7;
+  --red: #ff6b8a;
+  --orange: #ffab70;
+}
+
+/* Cyberpunk/Neon theme */
+[data-theme="cyberpunk"] {
+  --bg-hard: #0a0a12;
+  --bg: #12121a;
+  --bg-soft: #1a1a25;
+  --bg-highlight: #252535;
+  --fg: #eaf0ff;
+  --fg-dim: #a0b0d0;
+  --fg-muted: #505570;
+  --accent: #ff2a6d;
+  --green: #05ffa1;
+  --yellow: #f9f002;
+  --blue: #01c8ee;
+  --red: #ff2a6d;
+  --orange: #ff6b2b;
+}
+
+/* Sakura theme */
+[data-theme="sakura"] {
+  --bg-hard: #1a1520;
+  --bg: #231c28;
+  --bg-soft: #2d2533;
+  --bg-highlight: #3d3345;
+  --fg: #f5e6f0;
+  --fg-dim: #d4b8c8;
+  --fg-muted: #8a6a7a;
+  --accent: #ff90b3;
+  --green: #a8e6cf;
+  --yellow: #ffd3a5;
+  --blue: #a8d8ea;
+  --red: #ff6b8a;
+  --orange: #ffb085;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  min-height: 100vh;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-highlight);
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out;
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+::selection {
+  background: var(--blue);
+  color: var(--bg);
+}
+
+pre,
+code {
+  font-family: inherit;
+}
+
+/* Markdown prose styles */
+.prose-chat {
+  line-height: 1.7;
+}
+
+.prose-chat p {
+  margin: 0.5em 0;
+}
+
+.prose-chat p:first-child {
+  margin-top: 0;
+}
+
+.prose-chat p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-chat code {
+  color: var(--orange);
+  background: var(--bg-hard);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.prose-chat pre {
+  background: var(--bg-hard);
+  border-left: 2px solid var(--fg-muted);
+  padding: 0.75em 1em;
+  margin: 0.75em 0;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+.prose-chat pre code {
+  background: none;
+  padding: 0;
+  color: var(--fg);
+  font-size: 0.85em;
+}
+
+.prose-chat ul {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+  list-style-type: disc;
+}
+
+.prose-chat ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+  list-style-type: decimal;
+}
+
+.prose-chat li {
+  margin: 0.25em 0;
+}
+
+.prose-chat li::marker {
+  color: var(--fg-muted);
+}
+
+.prose-chat strong {
+  color: var(--yellow);
+  font-weight: 600;
+}
+
+.prose-chat em {
+  color: var(--fg-dim);
+  font-style: italic;
+}
+
+.prose-chat a {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+.prose-chat a:hover {
+  color: var(--fg);
+}
+
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  color: var(--green);
+  margin: 1em 0 0.5em 0;
+  font-weight: 600;
+}
+
+.prose-chat h1:first-child,
+.prose-chat h2:first-child,
+.prose-chat h3:first-child {
+  margin-top: 0;
+}
+
+.prose-chat h1 {
+  font-size: 1.3em;
+}
+.prose-chat h2 {
+  font-size: 1.15em;
+}
+.prose-chat h3 {
+  font-size: 1.05em;
+}
+
+.prose-chat blockquote {
+  border-left: 3px solid var(--fg-muted);
+  margin: 0.75em 0;
+  padding-left: 1em;
+  color: var(--fg-dim);
+}
+
+.prose-chat hr {
+  border: none;
+  border-top: 1px solid var(--bg-highlight);
+  margin: 1em 0;
+}
+
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+  font-size: 0.9em;
+}
+
+.prose-chat th,
+.prose-chat td {
+  border: 1px solid var(--bg-highlight);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.prose-chat th {
+  background: var(--bg-soft);
+  color: var(--yellow);
+  font-weight: 600;
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 10px 18px;
+  background: var(--bg-hard);
+  border: 1px solid var(--fg-muted);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 1000;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+}

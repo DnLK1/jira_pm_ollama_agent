@@ -1,0 +1,46 @@
+"use client";
+
+interface ReasoningStep {
+  type: "thinking" | "tool_call" | "tool_result";
+  content: string;
+}
+
+interface ReasoningDisplayProps {
+  steps: ReasoningStep[];
+}
+
+export function ReasoningDisplay({ steps }: ReasoningDisplayProps) {
+  if (steps.length === 0) return null;
+
+  return (
+    <div className="py-2 border-b border-[var(--bg-highlight)] animate-fade-in">
+      <div className="flex gap-3">
+        <span className="text-[var(--fg-muted)]">⋯</span>
+        <div className="flex-1 text-[var(--fg-muted)] text-sm font-mono">
+          {steps.map((step, index) => (
+            <div
+              key={index}
+              className={`py-0.5 ${
+                step.type === "tool_call"
+                  ? "text-[var(--blue)] opacity-70"
+                  : step.type === "tool_result"
+                    ? "text-[var(--green)] opacity-70"
+                    : "opacity-50"
+              }`}
+            >
+              {step.type === "thinking" && (
+                <span className="italic">{step.content}</span>
+              )}
+              {step.type === "tool_call" && <span>{step.content}</span>}
+              {step.type === "tool_result" && <span>{step.content}</span>}
+            </div>
+          ))}
+          <div className="flex items-center gap-1 py-0.5 opacity-50">
+            <span className="cursor-blink">▋</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

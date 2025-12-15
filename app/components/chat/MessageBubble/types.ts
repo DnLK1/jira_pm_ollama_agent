@@ -1,0 +1,15 @@
+/**
+ * Types for the MessageBubble component
+ * @module chat/MessageBubble/types
+ */
+
+import { Message } from "../types";
+
+/**
+ * Props for the MessageBubble component
+ */
+export interface MessageBubbleProps {
+  /** The message object to display */
+  message: Message;
+}
+

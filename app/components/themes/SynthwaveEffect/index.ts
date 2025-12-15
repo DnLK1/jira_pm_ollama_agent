@@ -1,0 +1,2 @@
+export { SynthwaveEffect } from "./SynthwaveEffect";
+
