@@ -8,7 +8,6 @@ import {
   ChatInput,
   ThemeSelector,
   ReasoningDisplay,
-  TypingIndicator,
   Theme,
 } from "./components/chat";
 import {
@@ -103,20 +102,20 @@ export default function Home() {
             <EmptyState />
           ) : (
             <div>
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-              {isLoading &&
-                (reasoning.length > 0 ? (
-                  <ReasoningDisplay steps={reasoning} />
-                ) : (
-                  <div className="py-2 border-b border-[var(--bg-highlight)]">
-                    <div className="flex gap-3">
-                      <span className="text-[var(--green)]">λ</span>
-                      <TypingIndicator />
-                    </div>
-                  </div>
-                ))}
+              {messages.map((message, index) => {
+                const isLastMessage = index === messages.length - 1;
+                const showThinking = isLoading && isLastMessage && reasoning.length === 0;
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isThinking={showThinking}
+                  />
+                );
+              })}
+              {isLoading && reasoning.length > 0 && (
+                <ReasoningDisplay steps={reasoning} />
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}

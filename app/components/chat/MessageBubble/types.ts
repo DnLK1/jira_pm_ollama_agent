@@ -11,5 +11,7 @@ import { Message } from "../types";
 export interface MessageBubbleProps {
   /** The message object to display */
   message: Message;
+  /** Whether to show the thinking indicator */
+  isThinking?: boolean;
 }
 

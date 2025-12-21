@@ -55,6 +55,33 @@ export interface TeamMember {
   email: string;
 }
 
+export interface CreateIssueParams {
+  projectKey: string;
+  summary: string;
+  description?: string;
+  issueType?: string;
+  assigneeEmail?: string;
+  storyPoints?: number;
+  storyPointsFieldId?: string | null;
+}
+
+export interface CreatedIssue {
+  key: string;
+  id: string;
+  self: string;
+  url: string;
+}
+
+export interface JiraField {
+  id: string;
+  name: string;
+  custom: boolean;
+  schema?: {
+    type: string;
+    custom?: string;
+  };
+}
+
 export interface JiraSprintSummary {
   sprint: JiraSprint | null;
   total_issues: number;
@@ -87,7 +114,49 @@ export interface ToolDefinition {
   };
 }
 
-export type ToolName = "prepare_search" | "get_sprint_issues" | "get_issue";
+import type { TOOL_NAMES } from "./tools";
+
+export type ToolName = (typeof TOOL_NAMES)[number];
+
+export interface PrepareSearchArgs {
+  names?: string[];
+  sprint_ids?: number[];
+}
+
+export interface GetSprintIssuesArgs {
+  sprint_ids: number[];
+  assignees?: string[];
+  assignee_emails?: string[];
+  status_filters?: string[];
+  keyword?: string;
+  include_breakdown?: boolean;
+}
+
+export interface GetIssueArgs {
+  issue_key: string;
+}
+
+export interface CreateIssueArgs {
+  summary: string;
+  description?: string;
+  issue_type?: string;
+  assignee?: string;
+  sprint_id?: number;
+  story_points?: number;
+  status?: string;
+}
+
+export type ToolArgsMap = {
+  prepare_search: PrepareSearchArgs;
+  get_sprint_issues: GetSprintIssuesArgs;
+  get_issue: GetIssueArgs;
+  create_issue: CreateIssueArgs;
+};
+
+export interface ToolCall<T extends ToolName = ToolName> {
+  name: T;
+  arguments: ToolArgsMap[T];
+}
 
 export type ToolResultMap = {
   prepare_search: {
@@ -136,5 +205,15 @@ export type ToolResultMap = {
     story_points: number | null;
     issue_type: string;
     comments: Array<{ author: string; body: string; created: string }>;
+  };
+  create_issue: {
+    key: string;
+    url: string;
+    summary: string;
+    issue_type: string;
+    assignee: string | null;
+    sprint: string | null;
+    story_points: number | null;
+    status: string;
   };
 };

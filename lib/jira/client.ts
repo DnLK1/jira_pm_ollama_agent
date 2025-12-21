@@ -1,4 +1,11 @@
-import type { JiraBoardInfo, JiraSprint, JiraSprintIssues } from "./types";
+import type {
+  JiraBoardInfo,
+  JiraSprint,
+  JiraSprintIssues,
+  CreateIssueParams,
+  CreatedIssue,
+  JiraField,
+} from "./types";
 
 const JIRA_BASE_URL = process.env.JIRA_BASE_URL || "";
 const JIRA_EMAIL = process.env.JIRA_EMAIL || "";
@@ -12,14 +19,18 @@ function extractTextFromAdf(adf: unknown): string {
   if (!adf || typeof adf !== "object") return "";
 
   const doc = adf as Record<string, unknown>;
-  
+
   const extractNode = (node: Record<string, unknown>): string => {
-    if (node.type === "text") return node.text as string || "";
-    if (node.type === "mention") return (node.attrs as Record<string, unknown>)?.text as string || "";
+    if (node.type === "text") return (node.text as string) || "";
+    if (node.type === "mention")
+      return ((node.attrs as Record<string, unknown>)?.text as string) || "";
     if (node.type === "hardBreak") return "\n";
-    if (node.type === "emoji") return (node.attrs as Record<string, unknown>)?.text as string || "";
+    if (node.type === "emoji")
+      return ((node.attrs as Record<string, unknown>)?.text as string) || "";
     if (node.content && Array.isArray(node.content)) {
-      return (node.content as Array<Record<string, unknown>>).map(extractNode).join("");
+      return (node.content as Array<Record<string, unknown>>)
+        .map(extractNode)
+        .join("");
     }
     return "";
   };
@@ -59,12 +70,37 @@ async function jiraFetch<T>(
   });
 
   if (!response.ok) {
+    const errorBody = await response.text();
+    let errorDetails = "";
+    try {
+      const parsed = JSON.parse(errorBody);
+      if (parsed.errors) {
+        errorDetails = Object.entries(parsed.errors)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+      } else if (parsed.errorMessages?.length) {
+        errorDetails = parsed.errorMessages.join(", ");
+      }
+    } catch {
+      errorDetails = errorBody.slice(0, 200);
+    }
     throw new Error(
-      `Jira API error: ${response.status} ${response.statusText}`
+      `Jira API error: ${response.status} ${response.statusText}${errorDetails ? ` - ${errorDetails}` : ""}`
     );
   }
 
-  return response.json();
+  // Handle empty responses (e.g., 204 No Content)
+  const contentLength = response.headers.get("content-length");
+  if (response.status === 204 || contentLength === "0") {
+    return {} as T;
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return {} as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
 export const jiraClient = {
@@ -108,14 +144,23 @@ export const jiraClient = {
     return mappedSprints.sort((a, b) => b.id - a.id).slice(0, maxResults);
   },
 
-  async getSprintIssues(sprintId: number): Promise<JiraSprintIssues> {
+  async getSprintIssues(
+    sprintId: number,
+    storyPointsFieldId?: string | null
+  ): Promise<JiraSprintIssues> {
     const allIssues: Array<Record<string, unknown>> = [];
     let startAt = 0;
     const maxResults = 100;
 
+    // Build fields list dynamically
+    const fieldsList = ["summary", "status", "issuetype", "assignee"];
+    if (storyPointsFieldId) {
+      fieldsList.push(storyPointsFieldId);
+    }
+
     while (true) {
       const data = await jiraFetch<Record<string, unknown>>(
-        `/rest/agile/1.0/sprint/${sprintId}/issue?fields=summary,status,issuetype,assignee,customfield_10023&maxResults=${maxResults}&startAt=${startAt}`
+        `/rest/agile/1.0/sprint/${sprintId}/issue?fields=${fieldsList.join(",")}&maxResults=${maxResults}&startAt=${startAt}`
       );
 
       const issues = (data.issues as Array<Record<string, unknown>>) || [];
@@ -141,7 +186,12 @@ export const jiraClient = {
       else if (categoryKey === "done") statusBreakdown.done++;
 
       const assigneeData = fields.assignee as Record<string, unknown> | null;
-      
+
+      // Get story points from dynamic field
+      const storyPoints = storyPointsFieldId
+        ? (fields[storyPointsFieldId] as number) || null
+        : null;
+
       return {
         key: issue.key as string,
         summary: fields.summary as string,
@@ -150,7 +200,7 @@ export const jiraClient = {
           ?.name as string,
         assignee: (assigneeData?.emailAddress as string) || null,
         assignee_display_name: (assigneeData?.displayName as string) || null,
-        story_points: (fields.customfield_10023 as number) || null,
+        story_points: storyPoints,
       };
     });
 
@@ -162,7 +212,10 @@ export const jiraClient = {
     };
   },
 
-  async getIssue(issueKey: string): Promise<{
+  async getIssue(
+    issueKey: string,
+    storyPointsFieldId?: string | null
+  ): Promise<{
     key: string;
     summary: string;
     description: string | null;
@@ -173,32 +226,35 @@ export const jiraClient = {
     issue_type: string;
     comments: Array<{ author: string; body: string; created: string }>;
   }> {
+    // Build fields list dynamically
+    const fieldsList = [
+      "summary",
+      "description",
+      "status",
+      "assignee",
+      "issuetype",
+      "comment",
+    ];
+    if (storyPointsFieldId) {
+      fieldsList.push(storyPointsFieldId);
+    }
+
     const data = await jiraFetch<Record<string, unknown>>(
-      `/rest/api/3/issue/${issueKey}?fields=summary,description,status,assignee,customfield_10023,issuetype,comment`
+      `/rest/api/3/issue/${issueKey}?fields=${fieldsList.join(",")}`
     );
 
     const fields = data.fields as Record<string, unknown>;
     const assigneeData = fields.assignee as Record<string, unknown> | null;
     const commentData = fields.comment as Record<string, unknown> | null;
-    const comments = (commentData?.comments as Array<Record<string, unknown>>) || [];
+    const comments =
+      (commentData?.comments as Array<Record<string, unknown>>) || [];
 
-    const descriptionContent = fields.description as Record<string, unknown> | null;
-    let description: string | null = null;
-    if (descriptionContent?.content) {
-      const extractText = (node: Record<string, unknown>): string => {
-        if (node.type === "text") return node.text as string;
-        if (node.content) {
-          return (node.content as Array<Record<string, unknown>>)
-            .map(extractText)
-            .join("");
-        }
-        return "";
-      };
-      description = (descriptionContent.content as Array<Record<string, unknown>>)
-        .map(extractText)
-        .join("\n")
-        .trim() || null;
-    }
+    const description = extractTextFromAdf(fields.description) || null;
+
+    // Get story points from dynamic field
+    const storyPoints = storyPointsFieldId
+      ? (fields[storyPointsFieldId] as number) || null
+      : null;
 
     return {
       key: data.key as string,
@@ -207,13 +263,155 @@ export const jiraClient = {
       status: (fields.status as Record<string, unknown>)?.name as string,
       assignee: (assigneeData?.emailAddress as string) || null,
       assignee_display_name: (assigneeData?.displayName as string) || null,
-      story_points: (fields.customfield_10023 as number) || null,
+      story_points: storyPoints,
       issue_type: (fields.issuetype as Record<string, unknown>)?.name as string,
       comments: comments.map((comment) => ({
-        author: ((comment.author as Record<string, unknown>)?.displayName as string) || "Unknown",
+        author:
+          ((comment.author as Record<string, unknown>)
+            ?.displayName as string) || "Unknown",
         body: extractTextFromAdf(comment.body),
         created: comment.created as string,
       })),
     };
+  },
+
+  /**
+   * Create a new issue in Jira.
+   * @param params - The issue creation parameters.
+   * @returns The created issue key and URL.
+   */
+  async createIssue(params: CreateIssueParams): Promise<CreatedIssue> {
+    const {
+      projectKey,
+      summary,
+      description,
+      issueType = "Story",
+      assigneeEmail,
+      storyPoints,
+      storyPointsFieldId,
+    } = params;
+
+    const fields: Record<string, unknown> = {
+      project: { key: projectKey },
+      summary,
+      issuetype: { name: issueType },
+    };
+
+    if (description) {
+      fields.description = {
+        type: "doc",
+        version: 1,
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: description }],
+          },
+        ],
+      };
+    }
+
+    if (assigneeEmail) {
+      fields.assignee = { id: await this.getAccountIdByEmail(assigneeEmail) };
+    }
+
+    if (storyPoints !== undefined && storyPointsFieldId) {
+      fields[storyPointsFieldId] = storyPoints;
+    }
+
+    const data = await jiraFetch<Record<string, unknown>>("/rest/api/3/issue", {
+      method: "POST",
+      body: JSON.stringify({ fields }),
+    });
+
+    return {
+      key: data.key as string,
+      id: data.id as string,
+      self: data.self as string,
+      url: `${JIRA_BASE_URL}/browse/${data.key}`,
+    };
+  },
+
+  /**
+   * Move an issue to a sprint.
+   * @param sprintId - The target sprint ID.
+   * @param issueKeys - Array of issue keys to move.
+   */
+  async moveIssuesToSprint(
+    sprintId: number,
+    issueKeys: string[]
+  ): Promise<void> {
+    await jiraFetch(`/rest/agile/1.0/sprint/${sprintId}/issue`, {
+      method: "POST",
+      body: JSON.stringify({ issues: issueKeys }),
+    });
+  },
+
+  /**
+   * Get Jira account ID by email address.
+   * @param email - The user's email address.
+   * @returns The account ID.
+   */
+  async getAccountIdByEmail(email: string): Promise<string> {
+    const data = await jiraFetch<Array<Record<string, unknown>>>(
+      `/rest/api/3/user/search?query=${encodeURIComponent(email)}`
+    );
+
+    if (!data.length) {
+      throw new Error(`User not found: ${email}`);
+    }
+
+    return data[0].accountId as string;
+  },
+
+  /**
+   * Get available transitions for an issue.
+   * @param issueKey - The issue key.
+   * @returns Array of available transitions with id and name.
+   */
+  async getTransitions(
+    issueKey: string
+  ): Promise<Array<{ id: string; name: string }>> {
+    const data = await jiraFetch<Record<string, unknown>>(
+      `/rest/api/3/issue/${issueKey}/transitions`
+    );
+
+    const transitions =
+      (data.transitions as Array<Record<string, unknown>>) || [];
+
+    return transitions.map((t) => ({
+      id: t.id as string,
+      name: t.name as string,
+    }));
+  },
+
+  /**
+   * Transition an issue to a new status.
+   * @param issueKey - The issue key.
+   * @param transitionId - The transition ID to execute.
+   */
+  async transitionIssue(issueKey: string, transitionId: string): Promise<void> {
+    await jiraFetch(`/rest/api/3/issue/${issueKey}/transitions`, {
+      method: "POST",
+      body: JSON.stringify({
+        transition: { id: transitionId },
+      }),
+    });
+  },
+
+  /**
+   * Get all fields from Jira.
+   * @returns Array of all fields with their IDs and metadata.
+   */
+  async getFields(): Promise<JiraField[]> {
+    const data = await jiraFetch<Array<Record<string, unknown>>>(
+      "/rest/api/3/field"
+    );
+
+    return data.map((field) => ({
+      id: field.id as string,
+      name: field.name as string,
+      custom: field.custom as boolean,
+      schema: field.schema as JiraField["schema"],
+    }));
   },
 };

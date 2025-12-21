@@ -1,5 +1,12 @@
 import { ToolDefinition } from "./types";
 
+export const TOOL_NAMES = [
+  "prepare_search",
+  "get_sprint_issues",
+  "get_issue",
+  "create_issue",
+] as const;
+
 export const jiraTools: ToolDefinition[] = [
   {
     type: "function",
@@ -91,6 +98,56 @@ Returns: { key, summary, description, status, assignee, comments: [...] }`,
           },
         },
         required: ["issue_key"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_issue",
+      description: `Create a new issue in Jira. ONLY call this AFTER user confirms.
+
+Examples:
+- create_issue(summary: "Add cart badge feature") - basic story
+- create_issue(summary: "Login broken", issue_type: "Bug", assignee: "Daniel") - bug with assignee
+- create_issue(summary: "User authentication", sprint_id: 9887, story_points: 5) - story with sprint and points
+
+Returns: { key, url, summary, issue_type, assignee, sprint, story_points, status }`,
+      parameters: {
+        type: "object",
+        properties: {
+          summary: {
+            type: "string",
+            description: "The issue title/summary (required)",
+          },
+          description: {
+            type: "string",
+            description: "Detailed description of the issue",
+          },
+          issue_type: {
+            type: "string",
+            description: "Issue type: Story (default) or Bug",
+          },
+          assignee: {
+            type: "string",
+            description: "Name of the assignee from TEAM MEMBERS list",
+          },
+          sprint_id: {
+            type: "number",
+            description:
+              "Sprint ID to add the issue to (from AVAILABLE SPRINTS)",
+          },
+          story_points: {
+            type: "number",
+            description: "Story point estimate",
+          },
+          status: {
+            type: "string",
+            description:
+              "Target status from AVAILABLE STATUSES (e.g. 'UI Review', 'Concluído'). If omitted, stays in initial status.",
+          },
+        },
+        required: ["summary"],
       },
     },
   },

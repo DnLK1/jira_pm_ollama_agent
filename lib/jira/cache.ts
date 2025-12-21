@@ -1,58 +1,115 @@
 import { jiraClient } from "./client";
 import { JIRA_CONFIG } from "../constants";
-import type { JiraSprint, TeamMember } from "./types";
+import type { JiraSprint, TeamMember, JiraField } from "./types";
 
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const FIELD_SEARCHES = [
+  {
+    key: "storyPoints",
+    patterns: [/^story\s*points?$/i],
+    fallbackIncludes: "story point",
+  },
+] as const;
+
+type FieldKey = (typeof FIELD_SEARCHES)[number]["key"];
+type FieldMappings = Record<FieldKey, string | null>;
 
 interface CacheData {
   sprints: JiraSprint[];
   statuses: string[];
   teamMembers: TeamMember[];
+  fields: JiraField[];
+  fieldMappings: FieldMappings;
   lastFetched: number;
 }
 
 let cache: CacheData | null = null;
 
-/**
- * Check if cache is still valid
- */
 function isCacheValid(): boolean {
-  if (!cache) return false;
-  return Date.now() - cache.lastFetched < CACHE_TTL_MS;
+  return cache !== null && Date.now() - cache.lastFetched < CACHE_TTL_MS;
 }
 
 /**
- * Fetch statuses and team members from recent sprint issues
+ * Fetch statuses and team members from recent sprint issues.
  */
-async function fetchStatusesAndTeam(boardId: number): Promise<{ statuses: string[]; teamMembers: TeamMember[] }> {
+async function fetchStatusesAndTeam(
+  boardId: number,
+  storyPointsFieldId: string | null
+): Promise<{ statuses: string[]; teamMembers: TeamMember[] }> {
   const sprints = await jiraClient.listSprints(boardId, "all", 5);
   const statusSet = new Set<string>();
   const memberMap = new Map<string, string>();
 
   for (const sprint of sprints) {
-    const issues = await jiraClient.getSprintIssues(sprint.id);
+    const issues = await jiraClient.getSprintIssues(
+      sprint.id,
+      storyPointsFieldId
+    );
     for (const issue of issues.issues) {
-      if (issue.status) {
-        statusSet.add(issue.status);
-      }
+      if (issue.status) statusSet.add(issue.status);
       if (issue.assignee && issue.assignee_display_name) {
         memberMap.set(issue.assignee, issue.assignee_display_name);
       }
     }
   }
 
-  const teamMembers = [...memberMap.entries()]
-    .map(([email, name]) => ({ email, name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
   return {
     statuses: [...statusSet].sort(),
-    teamMembers,
+    teamMembers: [...memberMap.entries()]
+      .map(([email, name]) => ({ email, name }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
   };
 }
 
 /**
- * Refresh the cache with fresh data from Jira
+ * Find custom fields from Jira fields using configured search patterns.
+ */
+function findFields(fields: JiraField[]): FieldMappings {
+  const result = {} as FieldMappings;
+
+  for (const search of FIELD_SEARCHES) {
+    let fieldId: string | null = null;
+
+    for (const pattern of search.patterns) {
+      const match = fields.find((f) => f.custom && pattern.test(f.name));
+      if (match) {
+        console.log(`[Cache] Found ${search.key}: ${match.id} - ${match.name}`);
+        fieldId = match.id;
+        break;
+      }
+    }
+
+    if (!fieldId && search.fallbackIncludes) {
+      const fallback = fields.find(
+        (f) =>
+          f.custom && f.name.toLowerCase().includes(search.fallbackIncludes)
+      );
+      if (fallback) {
+        console.log(
+          `[Cache] Found ${search.key} (fallback): ${fallback.id} - ${fallback.name}`
+        );
+        fieldId = fallback.id;
+      }
+    }
+
+    if (!fieldId) console.log(`[Cache] ${search.key} field not found`);
+    result[search.key] = fieldId;
+  }
+
+  return result;
+}
+
+/**
+ * Ensure cache is valid, refreshing if needed.
+ */
+async function ensureCache(): Promise<CacheData> {
+  if (isCacheValid()) return cache!;
+  return refreshCache();
+}
+
+/**
+ * Refresh the cache with fresh data from Jira.
  */
 export async function refreshCache(): Promise<CacheData> {
   if (!JIRA_CONFIG.boardId) {
@@ -60,84 +117,66 @@ export async function refreshCache(): Promise<CacheData> {
   }
 
   const boardId = JIRA_CONFIG.boardId;
-  const [allSprints, { statuses, teamMembers }] = await Promise.all([
+
+  const [allSprints, fields] = await Promise.all([
     jiraClient.listSprints(boardId, "all", 20),
-    fetchStatusesAndTeam(boardId),
+    jiraClient.getFields(),
   ]);
 
-  const sprints = allSprints.filter(
-    (sprint) => sprint.state === "active" || sprint.state === "closed"
+  const fieldMappings = findFields(fields);
+  const { statuses, teamMembers } = await fetchStatusesAndTeam(
+    boardId,
+    fieldMappings.storyPoints
   );
 
   cache = {
-    sprints,
+    sprints: allSprints.filter(
+      (s) => s.state === "active" || s.state === "closed"
+    ),
     statuses,
     teamMembers,
+    fields,
+    fieldMappings,
     lastFetched: Date.now(),
   };
 
   return cache;
 }
 
-/**
- * Get cached sprints (fetches if cache is empty or expired)
- */
 export async function getCachedSprints(): Promise<JiraSprint[]> {
-  if (!isCacheValid()) {
-    await refreshCache();
-  }
-  return cache!.sprints;
+  return (await ensureCache()).sprints;
 }
 
-/**
- * Get cached statuses (fetches if cache is empty or expired)
- */
 export async function getCachedStatuses(): Promise<string[]> {
-  if (!isCacheValid()) {
-    await refreshCache();
-  }
-  return cache!.statuses;
+  return (await ensureCache()).statuses;
 }
 
-/**
- * Get cached team members (fetches if cache is empty or expired)
- */
 export async function getCachedTeamMembers(): Promise<TeamMember[]> {
-  if (!isCacheValid()) {
-    await refreshCache();
-  }
-  return cache!.teamMembers;
+  return (await ensureCache()).teamMembers;
 }
 
-/**
- * Get all cached data (fetches if cache is empty or expired)
- */
 export async function getCachedData(): Promise<CacheData> {
-  if (!isCacheValid()) {
-    await refreshCache();
-  }
-  return cache!;
+  return ensureCache();
 }
 
-/**
- * Force refresh the cache regardless of TTL
- */
-export async function forceRefresh(): Promise<CacheData> {
-  return refreshCache();
-}
+export const forceRefresh = refreshCache;
 
-/**
- * Get cache status info
- */
-export function getCacheInfo(): { valid: boolean; age: number | null; expiresIn: number | null } {
-  if (!cache) {
-    return { valid: false, age: null, expiresIn: null };
-  }
+export function getCacheInfo(): {
+  valid: boolean;
+  age: number | null;
+  expiresIn: number | null;
+} {
+  if (!cache) return { valid: false, age: null, expiresIn: null };
   const age = Date.now() - cache.lastFetched;
-  return {
-    valid: isCacheValid(),
-    age,
-    expiresIn: CACHE_TTL_MS - age,
-  };
+  return { valid: isCacheValid(), age, expiresIn: CACHE_TTL_MS - age };
 }
 
+/**
+ * Get a custom field ID by key.
+ */
+export async function getFieldId(key: FieldKey): Promise<string | null> {
+  return (await ensureCache()).fieldMappings[key];
+}
+
+export const getStoryPointsFieldId = (): Promise<string | null> =>
+  getFieldId("storyPoints");

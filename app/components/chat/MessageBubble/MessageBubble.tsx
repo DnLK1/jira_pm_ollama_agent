@@ -4,7 +4,11 @@ import remarkGfm from "remark-gfm";
 import { MessageBubbleProps } from "./types";
 import { IssueListCard, IssueListData } from "../IssueListCard";
 import { SprintComparisonCard } from "../SprintComparisonCard";
-import { AssigneeBreakdownCard, AssigneeBreakdownData } from "../AssigneeBreakdownCard";
+import {
+  AssigneeBreakdownCard,
+  AssigneeBreakdownData,
+} from "../AssigneeBreakdownCard";
+import { TypingIndicator } from "../TypingIndicator";
 
 const markdownComponents: Components = {
   a: ({ href, children }) => (
@@ -28,32 +32,42 @@ const markdownComponents: Components = {
  * @component
  * @param props - Component props
  * @param props.message - The message object to display
+ * @param props.isThinking - Whether to show the thinking indicator (for empty assistant messages)
  * @returns The message component
  */
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  isThinking = false,
+}: MessageBubbleProps) {
   const [showReasoning, setShowReasoning] = useState(false);
   const isUser = message.role === "user";
   const validSources =
-    message.sources?.filter((source) => source.name?.trim() && source.url?.trim()) || [];
+    message.sources?.filter(
+      (source) => source.name?.trim() && source.url?.trim()
+    ) || [];
   const hasSources = !isUser && validSources.length > 0;
-  const hasReasoning = !isUser && message.reasoning && message.reasoning.length > 0;
-  const hasStructuredData = !isUser && message.structuredData && message.structuredData.length > 0;
+  const hasReasoning =
+    !isUser && message.reasoning && message.reasoning.length > 0;
+  const hasStructuredData =
+    !isUser && message.structuredData && message.structuredData.length > 0;
 
   const renderContent = () => {
-    if (isUser) {
+    if (isUser)
       return (
         <div className="text-[var(--fg)] whitespace-pre-wrap break-words">
           {message.content}
         </div>
       );
-    }
+
+    if (isThinking && !message.content) return <TypingIndicator />;
 
     if (hasStructuredData) {
       const issueLists = message.structuredData!.filter(
         (data): data is IssueListData => data.type === "issue_list"
       );
       const assigneeBreakdown = message.structuredData!.find(
-        (data): data is AssigneeBreakdownData => data.type === "assignee_breakdown"
+        (data): data is AssigneeBreakdownData =>
+          data.type === "assignee_breakdown"
       );
 
       return (
@@ -125,8 +139,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                         step.type === "tool_call"
                           ? "text-[var(--blue)] opacity-70"
                           : step.type === "tool_result"
-                            ? "text-[var(--green)] opacity-70"
-                            : "text-[var(--fg-muted)] opacity-50 italic"
+                          ? "text-[var(--green)] opacity-70"
+                          : "text-[var(--fg-muted)] opacity-50 italic"
                       }
                     >
                       {step.content}
@@ -162,4 +176,3 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     </div>
   );
 }
-
